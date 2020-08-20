@@ -1,0 +1,37 @@
+diff --git a/node_modules/@types/jexl/index.d.ts b/node_modules/@types/jexl/index.d.ts
+index 7a4eca2..6e85f1f 100644
+--- a/node_modules/@types/jexl/index.d.ts
++++ b/node_modules/@types/jexl/index.d.ts
+@@ -8,7 +8,7 @@ import Expression, { Context } from './Expression';
+ 
+ type TransformFunction = (value: any, ...args: any[]) => any;
+ 
+-type BinaryOpFunction = (left: any, right: any) => any;
++type BinaryOpFunction = (left: any, right: any, handlers?: any) => any;
+ 
+ type UnaryOpFunction = (right: any) => any;
+ 
+@@ -17,7 +17,7 @@ type UnaryOpFunction = (right: any) => any;
+  * evaluating basic to complex expression strings, combined with advanced
+  * xpath-like drilldown into native Javascript objects.
+  */
+-declare class Jexl {
++export declare class Jexl {
+     /**
+      * Adds a binary operator to Jexl at the specified precedence. The higher the
+      * precedence, the earlier the operator is applied in the order of operations.
+@@ -34,7 +34,7 @@ declare class Jexl {
+      *      on either side of the operator. It should return either the resulting
+      *      value, or a Promise that resolves with the resulting value.
+      */
+-    addBinaryOp(operator: string, precedence: number, fn: BinaryOpFunction): void;
++    addBinaryOp(operator: string, precedence: number, fn: BinaryOpFunction, raw?: boolean): void;
+ 
+     /**
+      * Adds a unary operator to Jexl. Unary operators are currently only supported
+@@ -127,4 +127,4 @@ declare class BuildableJexl extends Jexl {
+ 
+ declare const exportJexl: BuildableJexl;
+ 
+-export = exportJexl;
++export default exportJexl;

@@ -1,0 +1,109 @@
+diff --git a/node_modules/jexl/lib/Jexl.js b/node_modules/jexl/lib/Jexl.js
+index 7048ff1..7894093 100644
+--- a/node_modules/jexl/lib/Jexl.js
++++ b/node_modules/jexl/lib/Jexl.js
+@@ -37,11 +37,12 @@ class Jexl {
+    *      on either side of the operator. It should return either the resulting
+    *      value, or a Promise that resolves with the resulting value.
+    */
+-  addBinaryOp(operator, precedence, fn) {
++  addBinaryOp(operator, precedence, fn, raw) {
+     this._addGrammarElement(operator, {
+       type: 'binaryOp',
+       precedence: precedence,
+-      eval: fn
++      eval: fn,
++      ...raw ? {raw: raw} : {}
+     })
+   }
+ 
+@@ -57,7 +58,7 @@ class Jexl {
+   addUnaryOp(operator, fn) {
+     this._addGrammarElement(operator, {
+       type: 'unaryOp',
+-      weight: Infinity,
++      precedence: Infinity,
+       eval: fn
+     })
+   }
+diff --git a/node_modules/jexl/lib/evaluator/handlers.js b/node_modules/jexl/lib/evaluator/handlers.js
+index 711b9d9..da48fdd 100644
+--- a/node_modules/jexl/lib/evaluator/handlers.js
++++ b/node_modules/jexl/lib/evaluator/handlers.js
+@@ -24,10 +24,14 @@ exports.ArrayLiteral = function(ast) {
+  * @returns {Promise<*>} resolves with the value of the BinaryExpression.
+  * @private
+  */
+-exports.BinaryExpression = function(ast) {
+-  return this.Promise.all([this.eval(ast.left), this.eval(ast.right)]).then(
+-    arr => this._grammar[ast.operator].eval(arr[0], arr[1])
+-  )
++exports.BinaryExpression = function (ast) {
++  if (this._grammar[ast.operator].raw) {
++    return Promise.resolve(this._grammar[ast.operator].eval(ast.left, ast.right, this))
++  } else {
++    return this.Promise.all([this.eval(ast.left), this.eval(ast.right)]).then(
++      arr => this._grammar[ast.operator].eval(arr[0], arr[1])
++    )
++  }
+ }
+ 
+ /**
+diff --git a/node_modules/jexl/lib/parser/handlers.js b/node_modules/jexl/lib/parser/handlers.js
+index 0584322..5b96080 100644
+--- a/node_modules/jexl/lib/parser/handlers.js
++++ b/node_modules/jexl/lib/parser/handlers.js
+@@ -8,7 +8,10 @@
+  * @param {{type: <string>}} ast The subexpression tree
+  */
+ exports.argVal = function(ast) {
+-  this._cursor.args.push(ast)
++  this._cursor.args.push(ast || {
++        type: 'Literal',
++        value: undefined
++    })
+ }
+ 
+ /**
+diff --git a/node_modules/jexl/lib/parser/states.js b/node_modules/jexl/lib/parser/states.js
+index 8c237e2..b844ac6 100644
+--- a/node_modules/jexl/lib/parser/states.js
++++ b/node_modules/jexl/lib/parser/states.js
+@@ -54,7 +54,8 @@ exports.states = {
+       binaryOp: { toState: 'expectOperand' },
+       pipe: { toState: 'expectTransform' },
+       dot: { toState: 'traverse' },
+-      question: { toState: 'ternaryMid', handler: h.ternaryStart }
++      question: { toState: 'ternaryMid', handler: h.ternaryStart },
++      openBracket: { toState: 'filter' }
+     },
+     completable: true
+   },
+@@ -65,6 +66,7 @@ exports.states = {
+   },
+   expectObjKey: {
+     tokenTypes: {
++      literal: { toState: 'expectKeyValSep', handler: h.objKey },
+       identifier: { toState: 'expectKeyValSep', handler: h.objKey },
+       closeCurl: { toState: 'expectBinOp' }
+     }
+@@ -80,7 +82,8 @@ exports.states = {
+       binaryOp: { toState: 'expectOperand' },
+       dot: { toState: 'traverse' },
+       openBracket: { toState: 'filter' },
+-      pipe: { toState: 'expectTransform' }
++      pipe: { toState: 'expectTransform' },
++      question: { toState: 'ternaryMid', handler: h.ternaryStart }
+     },
+     completable: true
+   },
+@@ -89,7 +92,8 @@ exports.states = {
+       binaryOp: { toState: 'expectOperand' },
+       dot: { toState: 'traverse' },
+       openBracket: { toState: 'filter' },
+-      pipe: { toState: 'expectTransform' }
++      pipe: { toState: 'expectTransform' },
++      question: { toState: 'ternaryMid', handler: h.ternaryStart }
+     },
+     completable: true
+   },

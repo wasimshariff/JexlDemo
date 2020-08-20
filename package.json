@@ -7,7 +7,8 @@
     "build": "ng build",
     "test": "ng test",
     "lint": "ng lint",
-    "e2e": "ng e2e"
+    "e2e": "ng e2e",
+    "postinstall": "patch-package"
   },
   "private": true,
   "dependencies": {
@@ -19,9 +20,14 @@
     "@angular/platform-browser": "~8.2.5",
     "@angular/platform-browser-dynamic": "~8.2.5",
     "@angular/router": "~8.2.5",
+    "@types/jexl": "^2.2.0",
+    "@types/lodash": "^4.14.149",
+    "moment": "^2.24.0",
     "rxjs": "~6.4.0",
+    "jexl": "^2.2.2",
     "tslib": "^1.10.0",
-    "zone.js": "~0.9.1"
+    "zone.js": "~0.9.1",
+    "patch-package": "^6.2.2"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "~0.803.4",
